@@ -8,6 +8,7 @@ import {
 } from "@codesandbox/sandpack-react/unstyled";
 import { sandpackDark as draculaTheme } from "@codesandbox/sandpack-themes";
 import dedent from "dedent";
+import { useMemo } from "react";
 import "./code-viewer.css";
 
 export default function CodeViewer({
@@ -17,31 +18,40 @@ export default function CodeViewer({
   code: string;
   showEditor?: boolean;
 }) {
+  // Memoize files to prevent infinite re-renders during streaming
+  const files = useMemo(() => ({
+    "App.tsx": code,
+    ...sharedFiles,
+  }), [code]);
+
+  // Use code length as key to reduce re-renders during streaming
+  const codeKey = useMemo(() => Math.floor(code.length / 100), [code.length]);
+
   return showEditor ? (
     <Sandpack
+      key={codeKey}
       options={{
         showNavigator: false,
         editorHeight: "80vh",
         showTabs: false,
         ...sharedOptions,
       }}
-      files={{
-        "App.tsx": code,
-        ...sharedFiles,
-      }}
+      files={files}
       {...sharedProps}
     />
   ) : (
     <SandpackProvider
-      files={{
-        "App.tsx": code,
-        ...sharedFiles,
-      }}
+      key={codeKey}
+      files={files}
       className="flex h-full w-full grow flex-col justify-center"
       options={{ ...sharedOptions }}
       {...sharedProps}
     >
-      <SandpackPreview className="flex h-full w-full grow flex-col justify-center p-4 md:pt-16" showOpenInCodeSandbox={false} showRefreshButton={false} />
+      <SandpackPreview
+        className="flex h-full w-full grow flex-col justify-center p-4 md:pt-16"
+        showOpenInCodeSandbox={false}
+        showRefreshButton={false}
+      />
     </SandpackProvider>
   );
 }
@@ -121,6 +131,7 @@ let sharedFiles = {
   "/components/ui/dropdown-menu.tsx": shadcnComponents.dropdownMenu,
   "/components/ui/input.tsx": shadcnComponents.input,
   "/components/ui/label.tsx": shadcnComponents.label,
+  "/components/ui/form.tsx": shadcnComponents.form,
   "/components/ui/menubar.tsx": shadcnComponents.menuBar,
   "/components/ui/navigation-menu.tsx": shadcnComponents.navigationMenu,
   "/components/ui/pagination.tsx": shadcnComponents.pagination,

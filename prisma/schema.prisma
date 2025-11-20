@@ -7,6 +7,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                String   @id // Clerk user ID
+  email             String   @unique
+  firstName         String?
+  lastName          String?
+  imageUrl          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([email])
+}
+
 model GeneratedApp {
   id        String   @id @default(nanoid(5))
   model     String

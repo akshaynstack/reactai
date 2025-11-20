@@ -3039,6 +3039,96 @@ function useToast() {
 export { useToast, toast }
 `;
 
+export const form = `import * as React from "react"
+import * as ReactHookForm from "react-hook-form"
+import * as LabelPrimitive from "@radix-ui/react-label"
+import { Slot } from "@radix-ui/react-slot"
+import { cn } from "../../lib/utils"
+
+const Form = ReactHookForm.Form
+
+const FormItem = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("space-y-2", className)} {...props} />
+))
+FormItem.displayName = "FormItem"
+
+const FormLabel = React.forwardRef<
+  React.ElementRef<typeof LabelPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <LabelPrimitive.Root
+    ref={ref}
+    className={cn(
+      "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+      className
+    )}
+    {...props}
+  />
+))
+FormLabel.displayName = LabelPrimitive.Root.displayName
+
+const FormControl = React.forwardRef<
+  React.ElementRef<typeof Slot>,
+  React.ComponentPropsWithoutRef<typeof Slot>
+>(({ ...props }, ref) => (
+  <Slot
+    ref={ref}
+    {...props}
+  />
+))
+FormControl.displayName = "FormControl"
+
+const FormDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={cn("text-sm text-gray-500 dark:text-gray-400", className)}
+    {...props}
+  />
+))
+FormDescription.displayName = "FormDescription"
+
+const FormMessage = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, children, ...props }, ref) => {
+  const { error } = ReactHookForm.useFormField()
+  const body = error ? String(error?.message) : children
+
+  if (!body) {
+    return null
+  }
+
+  return (
+    <p
+      ref={ref}
+      className={cn("text-sm font-medium text-red-500 dark:text-red-400", className)}
+      {...props}
+    >
+      {body}
+    </p>
+  )
+})
+FormMessage.displayName = "FormMessage"
+
+const FormField = ReactHookForm.FormField
+
+export {
+  Form,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
+  FormMessage,
+  FormField,
+}
+`;
+
 export const shadcnComponents = {
   utils: utils,
   accordian: accordian,
@@ -3056,6 +3146,7 @@ export const shadcnComponents = {
   dialog: dialog,
   drawer: drawer,
   dropdownMenu: dropdownMenu,
+  form: form,
   hoverCard: hoverCard,
   input: input,
   label: label,
@@ -3087,6 +3178,7 @@ export const essentialShadcnComponents = {
   button: button,
   card: card,
   checkbox: checkbox,
+  form: form,
   input: input,
   label: label,
   radioGroup: radioGroup,

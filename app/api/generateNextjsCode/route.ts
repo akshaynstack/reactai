@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import dedent from "dedent";
 import { z } from "zod";
+import { auth } from '@clerk/nextjs/server';
 
 const openai = new OpenAI({
   apiKey: process.env.LLM_API_KEY,
@@ -8,6 +9,13 @@ const openai = new OpenAI({
 });
 
 export async function POST(req: Request) {
+  // Check if user is authenticated
+  const { userId } = await auth();
+
+  if (!userId) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
   const json = await req.json();
   const result = z
     .object({
@@ -40,7 +48,7 @@ export async function POST(req: Request) {
         content:
           message.role === "user"
             ? message.content +
-              "\nPlease ONLY return code, NO backticks or language names."
+            "\nPlease ONLY return code, NO backticks or language names."
             : message.content,
       })),
     ],
