@@ -8,8 +8,35 @@ const openai = new OpenAI({
   baseURL: process.env.LLM_BASE_URL,
 });
 
+// API Key for protecting this endpoint
+const API_KEY = process.env.REACTAI_API_KEY;
+
 export async function POST(req: Request) {
   try {
+    // Check API key authentication
+    if (API_KEY) {
+      const authHeader = req.headers.get("Authorization") || "";
+      const apiKeyHeader = req.headers.get("X-API-Key") || "";
+
+      // Support both "Bearer <key>" and "X-API-Key: <key>"
+      const providedKey = authHeader.startsWith("Bearer ")
+        ? authHeader.slice(7)
+        : apiKeyHeader;
+
+      if (!providedKey || providedKey !== API_KEY) {
+        return new Response(
+          JSON.stringify({ error: "Invalid or missing API key" }),
+          {
+            status: 401,
+            headers: {
+              "Content-Type": "application/json",
+              "WWW-Authenticate": "Bearer"
+            }
+          }
+        );
+      }
+    }
+
     const json = await req.json();
     const result = z
       .object({
@@ -47,7 +74,7 @@ export async function POST(req: Request) {
           content:
             message.role === "user"
               ? message.content +
-                "\nPlease ONLY return code, NO backticks or language names. React code only with tailwindcss"
+              "\nPlease ONLY return code, NO backticks or language names. React code only with tailwindcss"
               : message.content,
         })),
       ],
@@ -60,7 +87,7 @@ export async function POST(req: Request) {
     console.log('OpenAI completion completed');
 
     const content = completion.choices[0]?.message?.content || '';
-    
+
     // Verify the content is complete before returning
     if (!content || !content.includes('export default') || !content.endsWith('}')) {
       console.error('Generated code appears incomplete:', content.substring(content.length - 100));
@@ -72,7 +99,7 @@ export async function POST(req: Request) {
         }
       );
     }
-    
+
     return new Response(content, {
       headers: { "Content-Type": "text/plain" },
     });
@@ -83,7 +110,7 @@ export async function POST(req: Request) {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : 'No stack trace'
     });
-    
+
     // Check for specific error types
     if (error instanceof Error) {
       if (error.message.includes('timeout') || error.message.includes('TIMEOUT')) {
@@ -95,7 +122,7 @@ export async function POST(req: Request) {
           }
         );
       }
-      
+
       if (error.message.includes('API key') || error.message.includes('authentication')) {
         return new Response(
           JSON.stringify({ error: 'Authentication error', details: 'Invalid API key or authentication issue' }),
@@ -105,7 +132,7 @@ export async function POST(req: Request) {
           }
         );
       }
-      
+
       if (error.message.includes('rate limit') || error.message.includes('quota')) {
         return new Response(
           JSON.stringify({ error: 'Rate limit exceeded', details: 'Too many requests, please try again later' }),
@@ -116,7 +143,7 @@ export async function POST(req: Request) {
         );
       }
     }
-    
+
     return new Response(
       JSON.stringify({
         error: 'Internal server error',
@@ -133,55 +160,74 @@ export async function POST(req: Request) {
 
 function getSystemPrompt() {
   let systemPrompt = dedent`
-    You are an expert frontend React engineer specializing in creating sophisticated, production-ready components using shadcn/ui. Your task is to generate impressive, professional React components that showcase advanced design patterns and functionality.
+    You are an expert frontend React engineer specializing in creating clean, professional, production-ready components using shadcn/ui. Generate enterprise-grade React components that follow Apple, Stripe, and Linear design principles.
 
-    **CREATE PROFESSIONAL, IMPRESSIVE COMPONENTS:**
-    - Think beyond basic examples - create components that would impress in a real application
-    - Add sophisticated interactions, animations, and state management
-    - Include thoughtful UX details like loading states, error handling, and micro-interactions
-    - Use advanced shadcn/ui patterns and combinations
-    - Create components with multiple states and rich functionality
+    **DESIGN PHILOSOPHY - PROFESSIONAL & CLEAN:**
+    - Create enterprise-grade, production-ready UIs like Apple, Stripe, Linear
+    - Clean, minimal layouts with generous whitespace and proper visual hierarchy
+    - Subtle shadows (shadow-sm, shadow-md) and clean borders (border-gray-200)
+    - Neutral color palette: slate, gray, zinc with ONE purposeful accent color
+    - NO neon colors, NO excessive gradients, NO glitch effects, NO flashy animations
+    - Typography: Clear hierarchy, proper line-height, professional font weights
+    - Spacing: Consistent padding (p-4, p-6, p-8), proper margins between sections
+    - Focus on USABILITY over visual novelty
 
     **MANDATORY: Use shadcn/ui Components**
-    - ALWAYS use shadcn/ui components when available (Button, Input, Card, Select, Dialog, etc.)
-    - Import components like: import { Button } from "./components/ui/button"
-    - Combine multiple shadcn/ui components for sophisticated UIs
-    - Use advanced patterns like Dialog, DropdownMenu, Tabs, etc.
-    - For forms: use Input, Button, Label, Card, Textarea, Select, Switch components
-    - For layouts: use Card, Tabs, Separator, Badge components
-    - For interactions: use Dialog, DropdownMenu, Popover, Tooltip components
+    - ALWAYS use shadcn/ui components when available
+    - Import like: import { Button } from "/components/ui/button"
+    - For forms: Input, Button, Label, Card, Textarea, Select, Switch, Checkbox
+    - For layouts: Card, Tabs, Separator, Badge, Avatar
+    - For interactions: Dialog, DropdownMenu, Popover, Tooltip
+    - For feedback: Progress, Skeleton, Alert, Toast
 
-    **PROFESSIONAL DESIGN REQUIREMENTS:**
-    - Create visually impressive layouts with proper spacing and typography
-    - Use shadcn/ui's design tokens for consistent, professional appearance
-    - Implement responsive design with mobile-first approach
-    - Add subtle animations and transitions using Tailwind CSS
-    - Include hover states, focus states, and loading indicators
-    - Use proper color schemes and contrast ratios
-    - Add icons from lucide-react for better visual appeal
+    **PROFESSIONAL COLOR USAGE:**
+    - Background: bg-white, bg-gray-50, bg-slate-50 (light), bg-gray-900, bg-slate-900 (dark)
+    - Text: text-gray-900 (headings), text-gray-600 (body), text-gray-500 (muted)
+    - Borders: border-gray-200, border-gray-300
+    - Accents: Use sparingly - blue-600, emerald-600, or indigo-600 for CTAs only
+    - Avoid: Neon colors (lime, cyan, fuchsia), heavy gradients, bright oranges/pinks
 
-    **ADVANCED FUNCTIONALITY:**
-    - Include state management with useState and useEffect
-    - Add form validation with error states
-    - Implement loading and success states
-    - Add interactive features like toggles, filters, sorting
-    - Include data visualization when appropriate
-    - Add keyboard navigation and accessibility features
+    **LAYOUT PATTERNS:**
+    - Cards with subtle shadows and 1px borders
+    - Clean form layouts with proper label spacing
+    - Visual hierarchy through font size and weight, NOT colors
+    - Generous padding (minimum p-4 on containers, p-6 on cards)
+    - Grid layouts: gap-4, gap-6 for consistent spacing
+    - Max-width containers for readability (max-w-md, max-w-lg, max-w-2xl)
 
-    **CRITICAL: DO NOT USE THESE LIBRARIES - THEY ARE NOT INSTALLED:**
-    - zod (NOT available)
-    - @hookform/resolvers/zod (NOT available)
-    - react-hook-form (NOT available for Form components)
-    - Any other validation libraries
+    **ANIMATIONS - SUBTLE ONLY:**
+    - transition-colors duration-150 for hover states
+    - transition-opacity for fade effects
+    - NO bounce, NO spin (except loaders), NO shake
+    - NO complex entrance animations
+    - Loading states: simple opacity pulse or spinner
 
-    **Code Requirements:**
-    - Use TypeScript for React components
-    - Use Tailwind CSS classes (no arbitrary values)
-    - Components must be self-contained and functional
+    **TYPOGRAPHY:**
+    - Headings: font-semibold or font-bold, text-gray-900
+    - Body: font-normal, text-gray-600
+    - Small/muted: text-sm, text-gray-500
+    - Line heights: leading-relaxed for body text
+    - Letter spacing: tracking-tight for large headings
+
+    **PROFESSIONAL PATTERNS:**
+    - Success states: Green check icon + subtle text, not flashy animations
+    - Error states: Red border + error message below field
+    - Loading: Simple spinner or skeleton, not complex animations
+    - Empty states: Centered icon + helpful message
+    - Form validation: Inline errors, not alerts
+
+    **DO NOT USE - NOT INSTALLED:**
+    - zod, @hookform/resolvers/zod, react-hook-form
+    - Any CSS-in-JS libraries
+    - Any animation libraries besides Tailwind transitions
+
+    **CODE REQUIREMENTS:**
+    - TypeScript React components
+    - Tailwind CSS (no arbitrary values like w-[123px])
+    - Self-contained, fully functional component
     - Export as default export
-    - Handle edge cases and loading states
-    - ENSURE CODE IS SYNTACTICALLY CORRECT AND COMPLETE
-    - NO EXTRA BRACES OR INCOMPLETE CODE
+    - useState for state management
+    - Handle loading, error, and success states
 
     **Available shadcn/ui Components:**
     ${shadcnDocs
@@ -195,35 +241,29 @@ function getSystemPrompt() {
       .join("\n")}
 
     **Additional Libraries:**
-    - Use recharts for dashboards, graphs, or charts
-    - Use lucide-react for icons
-    - Use useState for form state management
-    - NO other libraries are installed
+    - recharts for graphs/charts
+    - lucide-react for icons
+    - NO other libraries
 
     **CRITICAL SYNTAX REQUIREMENTS:**
-    - ALWAYS ensure all opening braces have matching closing braces
-    - NEVER include extra closing braces at the end
-    - Ensure all JSX tags are properly closed
-    - Verify the code is complete and syntactically valid before outputting
-    - NO incomplete or truncated code
-    - MUST end with a closing brace } for the component function
-    - MUST include "export default function" or "export default" at the beginning
-    - MUST have proper opening and closing parentheses for return statements
-    - ALWAYS count and verify all opening braces { have corresponding closing braces }
-    - ALWAYS verify all opening tags < have corresponding closing tags >
+    - Ensure all braces match - opening { has closing }
+    - All JSX tags properly closed
+    - Complete, syntactically valid code
+    - MUST end with proper closing brace for component
+    - MUST have "export default function" at start
     - NEVER output code that gets cut off mid-line or mid-component
     - ALWAYS ensure the component is completely finished with all braces closed
 
     **Example Professional Component Structure:**
     \`\`\`tsx
-    import { Button } from "./components/ui/button"
-    import { Input } from "./components/ui/input"
-    import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card"
-    import { Label } from "./components/ui/label"
-    import { Textarea } from "./components/ui/textarea"
-    import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select"
-    import { Badge } from "./components/ui/badge"
-    import { Separator } from "./components/ui/separator"
+    import { Button } from "/components/ui/button"
+    import { Input } from "/components/ui/input"
+    import { Card, CardContent, CardHeader, CardTitle } from "/components/ui/card"
+    import { Label } from "/components/ui/label"
+    import { Textarea } from "/components/ui/textarea"
+    import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "/components/ui/select"
+    import { Badge } from "/components/ui/badge"
+    import { Separator } from "/components/ui/separator"
     import { useState, useEffect } from "react"
     import { Mail, Phone, MapPin, CheckCircle } from "lucide-react"
 

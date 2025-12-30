@@ -1,52 +1,42 @@
 import { notFound } from "next/navigation";
 import CodeViewer from "@/components/code-viewer";
-import client from "@/lib/prisma";
 import type { Metadata } from "next";
-import { cache } from "react";
 
 export async function generateMetadata({
   params,
 }: {
   params: { id: string };
 }): Promise<Metadata> {
-  const generatedApp = await getGeneratedAppByID(params.id);
-
-  let prompt = generatedApp?.prompt;
-  if (typeof prompt !== "string") {
-    notFound();
-  }
-
-  let searchParams = new URLSearchParams();
-  searchParams.set("prompt", prompt);
-
   return {
-    title: "An app generated on ReactAI Components",
-    description: `Prompt: ${generatedApp?.prompt}`,
-    openGraph: {
-      images: [`/api/og?${searchParams}`],
-    },
+    title: "Shared App - ReactAI Components",
+    description: "A React component generated with ReactAI",
   };
 }
 
 export default async function Page({ params }: { params: { id: string } }) {
-  // if process.env.DATABASE_URL is not set, throw an error
   if (typeof params.id !== "string") {
     notFound();
   }
 
-  const generatedApp = await getGeneratedAppByID(params.id);
+  // Note: Database persistence has been removed.
+  // Shared apps are no longer stored in a database.
+  // This page will show a message explaining how to share code.
 
-  if (!generatedApp) {
-    return <div>App not found</div>;
-  }
-
-  return <CodeViewer code={generatedApp.code} />;
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-8 text-center">
+      <h1 className="text-2xl font-bold mb-4">Share Feature Unavailable</h1>
+      <p className="text-muted-foreground mb-4">
+        Database persistence has been removed from this version of ReactAI.
+      </p>
+      <p className="text-muted-foreground">
+        To share your generated components, please copy the code directly from the editor.
+      </p>
+      <a
+        href="/"
+        className="mt-6 px-4 py-2 bg-[#9AE65C] text-black rounded hover:bg-[#8ad34f]"
+      >
+        Generate New Component
+      </a>
+    </div>
+  );
 }
-
-const getGeneratedAppByID = cache(async (id: string) => {
-  return client.generatedApp.findUnique({
-    where: {
-      id,
-    },
-  });
-});

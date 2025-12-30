@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import {
-  ClerkProvider
-} from '@clerk/nextjs'
 
 let title = "ReactAI Components";
 let description = "Generate React Components with AI";
@@ -40,13 +37,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
     <html lang="en" className="h-full">
       <head></head>
       <body className="">
-          {children}
+        {children}
       </body>
     </html>
-    </ClerkProvider>
   );
 }

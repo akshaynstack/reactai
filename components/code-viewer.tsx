@@ -152,6 +152,7 @@ let sharedFiles = {
   "/components/ui/toggle.tsx": shadcnComponents.toggle,
   "/components/ui/tooltip.tsx": shadcnComponents.tooltip,
   "/components/ui/use-toast.tsx": shadcnComponents.useToast,
+  "/components/ui/hover-card.tsx": shadcnComponents.hoverCard,
   "/public/index.html": dedent`
 <!DOCTYPE html>
     <html lang="en">

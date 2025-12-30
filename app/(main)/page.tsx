@@ -14,17 +14,25 @@ import ProductHunt from "@/components/producthunt";
 import { useTheme } from "next-themes"
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Github } from "lucide-react";
+import { Github, Search } from "lucide-react";
+
+// Default fallback model if API fails
+const DEFAULT_MODELS = [
+  { label: "Default Model", value: "default" },
+];
 
 export default function Home() {
   let [status, setStatus] = useState<
     "initial" | "creating" | "created" | "updating" | "updated"
   >("initial");
   let [prompt, setPrompt] = useState("");
-  let models = [
-    { label: "zai-org/GLM-4.6", value: "zai-org/GLM-4.6" },
-  ];
-  let [model, setModel] = useState(models[0].value);
+
+  // Dynamic models state
+  let [models, setModels] = useState(DEFAULT_MODELS);
+  let [modelsLoading, setModelsLoading] = useState(true);
+
+  let [model, setModel] = useState("");
+  let [modelSearch, setModelSearch] = useState("");
   let [shadcn, setShadcn] = useState(false);
   let [modification, setModification] = useState("");
   let [generatedCode, setGeneratedCode] = useState("");
@@ -37,6 +45,32 @@ export default function Home() {
   let [isPublishing, setIsPublishing] = useState(false);
 
   let loading = status === "creating" || status === "updating";
+
+  // Fetch models from API on mount
+  useEffect(() => {
+    async function fetchModels() {
+      try {
+        setModelsLoading(true);
+        const res = await fetch("/api/models");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.models && data.models.length > 0) {
+            setModels(data.models);
+            setModel(data.models[0].value);
+          }
+        } else {
+          console.error("Failed to fetch models");
+          toast.error("Failed to load models, using defaults");
+        }
+      } catch (error) {
+        console.error("Error fetching models:", error);
+        toast.error("Failed to load models");
+      } finally {
+        setModelsLoading(false);
+      }
+    }
+    fetchModels();
+  }, []);
 
   const createApp = useCallback(
     async (e: FormEvent<HTMLFormElement>) => {
@@ -228,39 +262,71 @@ export default function Home() {
           <span className="text-sm text-muted-foreground">Model:</span>
           <Select.Root
             name="model"
-            disabled={loading}
+            disabled={loading || modelsLoading}
             value={model}
-            onValueChange={(value) => setModel(value)}
+            onValueChange={(value) => {
+              setModel(value);
+              setModelSearch(""); // Clear search when selected
+            }}
           >
-            <Select.Trigger className="w-full flex items-center justify-between rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand">
-              <Select.Value />
+            <Select.Trigger className="w-full min-w-[250px] flex items-center justify-between rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand disabled:opacity-50">
+              {modelsLoading ? (
+                <span className="text-gray-400">Loading models...</span>
+              ) : (
+                <Select.Value placeholder="Select a model" />
+              )}
               <Select.Icon>
                 <ChevronDownIcon className="size-4 text-gray-300" />
               </Select.Icon>
             </Select.Trigger>
             <Select.Portal>
-              <Select.Content className="overflow-hidden rounded-md bg-white shadow-lg">
-                <Select.Viewport className="p-2">
-                  {models.map((model) => (
-                    <Select.Item
-                      key={model.value}
-                      value={model.value}
-                      className="flex cursor-pointer items-center rounded-md px-3 py-2 text-sm data-[highlighted]:bg-gray-100 data-[highlighted]:outline-none"
-                    >
-                      <Select.ItemText asChild>
-                        <span className="inline-flex items-center gap-2 text-gray-500">
-                          <div className="size-2 rounded-full bg-brand" />
-                          {model.label}
-                        </span>
-                      </Select.ItemText>
-                      <Select.ItemIndicator className="ml-auto">
-                        <CheckIcon className="size-5 text-brand" />
-                      </Select.ItemIndicator>
-                    </Select.Item>
-                  ))}
+              <Select.Content className="overflow-hidden rounded-md bg-white shadow-lg" position="popper" sideOffset={5}>
+                {/* Search Input */}
+                <div className="p-2 border-b border-gray-200">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search models..."
+                      value={modelSearch}
+                      onChange={(e) => setModelSearch(e.target.value)}
+                      className="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                </div>
+                <Select.Viewport className="p-2 max-h-[250px] overflow-y-auto">
+                  {models
+                    .filter((m) =>
+                      m.label.toLowerCase().includes(modelSearch.toLowerCase()) ||
+                      m.value.toLowerCase().includes(modelSearch.toLowerCase())
+                    )
+                    .map((m) => (
+                      <Select.Item
+                        key={m.value}
+                        value={m.value}
+                        className="flex cursor-pointer items-center rounded-md px-3 py-2 text-sm data-[highlighted]:bg-gray-100 data-[highlighted]:outline-none"
+                      >
+                        <Select.ItemText asChild>
+                          <span className="inline-flex items-center gap-2 text-gray-500">
+                            <div className="size-2 rounded-full bg-brand" />
+                            {m.label}
+                          </span>
+                        </Select.ItemText>
+                        <Select.ItemIndicator className="ml-auto">
+                          <CheckIcon className="size-5 text-brand" />
+                        </Select.ItemIndicator>
+                      </Select.Item>
+                    ))}
+                  {models.filter((m) =>
+                    m.label.toLowerCase().includes(modelSearch.toLowerCase()) ||
+                    m.value.toLowerCase().includes(modelSearch.toLowerCase())
+                  ).length === 0 && (
+                      <div className="px-3 py-2 text-sm text-gray-400">No models found</div>
+                    )}
                 </Select.Viewport>
                 <Select.ScrollDownButton />
-                <Select.Arrow />
               </Select.Content>
             </Select.Portal>
           </Select.Root>

@@ -5,10 +5,8 @@ import { Button } from "@/components/ui/button"
 import { useTheme } from "next-themes"
 import { Github, Twitter, Moon, Sun } from "lucide-react"
 import { useState, useEffect } from "react"
-import { UserButton, SignInButton, useUser } from "@clerk/nextjs"
 
 export default function Header() {
-  const { isSignedIn, isLoaded } = useUser()
   const [mounted, setMounted] = useState(false)
   const { setTheme, theme } = useTheme()
 
@@ -27,17 +25,6 @@ export default function Header() {
         </div>
       </Link>
       <div className="flex items-center gap-4">
-        {isLoaded && (
-          isSignedIn ? (
-            <UserButton afterSignOutUrl="/" />
-          ) : (
-            <SignInButton mode="modal">
-              <Button variant="default" className="bg-[#9AE65C] hover:bg-[#8ad34f] text-black">
-                Sign In
-              </Button>
-            </SignInButton>
-          )
-        )}
         <Button
           variant="ghost"
           size="icon"
