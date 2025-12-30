@@ -61,13 +61,13 @@ let sharedProps = {
   theme: draculaTheme,
   customSetup: {
     dependencies: {
-      "lucide-react": "latest",
-      recharts: "2.9.0",
-      "react-router-dom": "latest",
-      "framer-motion": "latest",
-      "react-icons": "latest",
-      "axios": "latest",
-      "@heroicons/react": "latest",
+      "lucide-react": "0.462.0",
+      "recharts": "2.9.0",
+      "react-router-dom": "6.26.0",
+      "framer-motion": "11.3.19",
+      "react-icons": "5.2.1",
+      "axios": "1.7.2",
+      "@heroicons/react": "2.1.5",
       "@radix-ui/react-accordion": "^1.2.0",
       "@radix-ui/react-alert-dialog": "^1.1.1",
       "@radix-ui/react-aspect-ratio": "^1.1.0",
@@ -108,7 +108,7 @@ let sharedProps = {
 
 let sharedOptions = {
   externalResources: [
-    "https://unpkg.com/@tailwindcss/ui/dist/tailwind-ui.min.css",
+    "https://cdn.tailwindcss.com",
   ],
 };
 
@@ -153,18 +153,87 @@ let sharedFiles = {
   "/components/ui/tooltip.tsx": shadcnComponents.tooltip,
   "/components/ui/use-toast.tsx": shadcnComponents.useToast,
   "/components/ui/hover-card.tsx": shadcnComponents.hoverCard,
+  "/styles.css": dedent`
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      margin: 0;
+      padding: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+      border-color: hsl(214.3, 31.8%, 91.4%);
+    }
+
+    .animate-accordion-down {
+      animation: accordion-down 0.2s ease-out;
+    }
+    .animate-accordion-up {
+      animation: accordion-up 0.2s ease-out;
+    }
+    @keyframes accordion-down {
+      from { height: 0; }
+      to { height: var(--radix-accordion-content-height); }
+    }
+    @keyframes accordion-up {
+      from { height: var(--radix-accordion-content-height); }
+      to { height: 0; }
+    }
+
+    .animate-spin {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  `,
   "/public/index.html": dedent`
-<!DOCTYPE html>
+    <!DOCTYPE html>
     <html lang="en">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Document</title>
+        <title>Preview</title>
         <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+          tailwind.config = {
+            darkMode: 'class',
+            theme: {
+              extend: {
+                colors: {
+                  border: "hsl(214.3, 31.8%, 91.4%)",
+                  input: "hsl(214.3, 31.8%, 91.4%)",
+                  ring: "hsl(222.2, 84%, 4.9%)",
+                  background: "hsl(0, 0%, 100%)",
+                  foreground: "hsl(222.2, 84%, 4.9%)",
+                  primary: { DEFAULT: "hsl(222.2, 47.4%, 11.2%)", foreground: "hsl(210, 40%, 98%)" },
+                  secondary: { DEFAULT: "hsl(210, 40%, 96.1%)", foreground: "hsl(222.2, 47.4%, 11.2%)" },
+                  destructive: { DEFAULT: "hsl(0, 84.2%, 60.2%)", foreground: "hsl(210, 40%, 98%)" },
+                  muted: { DEFAULT: "hsl(210, 40%, 96.1%)", foreground: "hsl(215.4, 16.3%, 46.9%)" },
+                  accent: { DEFAULT: "hsl(210, 40%, 96.1%)", foreground: "hsl(222.2, 47.4%, 11.2%)" },
+                  popover: { DEFAULT: "hsl(0, 0%, 100%)", foreground: "hsl(222.2, 84%, 4.9%)" },
+                  card: { DEFAULT: "hsl(0, 0%, 100%)", foreground: "hsl(222.2, 84%, 4.9%)" },
+                },
+                borderRadius: {
+                  lg: "0.5rem",
+                  md: "calc(0.5rem - 2px)",
+                  sm: "calc(0.5rem - 4px)",
+                },
+              }
+            }
+          }
+        </script>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+          * { border-color: hsl(214.3, 31.8%, 91.4%); }
+        </style>
       </head>
-      <body>
+      <body class="bg-white text-gray-900 antialiased">
         <div id="root"></div>
       </body>
     </html>
-`,
+  `,
 };
